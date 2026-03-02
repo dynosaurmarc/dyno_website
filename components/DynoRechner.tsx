@@ -58,7 +58,23 @@ const schema = z.object({
 /**
  * Scalable-like Dark tokens (kannst du später auf DYNO Brand ziehen)
  */
-const TOKENS = {
+type Tokens = {
+  bg: string
+  panel: string
+  panel2: string
+  text: string
+  muted: string
+  border: string
+  border2: string
+  primary: string
+  accent: string
+  danger: string
+  warn: string
+  shadow: string
+  radius: number
+}
+
+const TOKENS: Tokens = {
   bg: "#0B0F14",
   panel: "#0F1621",
   panel2: "#111B28",
@@ -66,13 +82,13 @@ const TOKENS = {
   muted: "#9BB0C9",
   border: "rgba(255,255,255,0.10)",
   border2: "rgba(255,255,255,0.16)",
-  primary: "#2F6BFF",
-  accent: "#24E0C2", // Scalable-like mint
+  primary: "#155EEF",
+  accent: "#24E0C2",
   danger: "#FF4D4F",
   warn: "#FFB020",
-  radius: 18,
   shadow: "0 18px 60px rgba(0,0,0,0.45)",
-} as const
+  radius: 18,
+}
 
 export default function DynoRechner(props: {
   defaultNetOutlay?: number
