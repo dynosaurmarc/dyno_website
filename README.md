@@ -1,56 +1,25 @@
 # dyno_website
 
-Next.js App für die DYNO Unternehmenswebsite.  
-Optimiert für modulare Komponenten, interaktive Tools und die Einbettung in Framer.
+DYNO Rechner-Komponenten inkl. Framer-Embed und optionaler Next.js-Route.
 
----
+## Neu: Rechner (Altersvorsorgedepot + DYNO bAV)
 
-## 🚀 Overview
+- Framer Code Component: `components/DynoRechner.tsx`
+- Rechenlogik: `lib/calc/*`
+- Tests: `tests/*`
+- Optional Next.js Route: `app/rechner/page.tsx`
 
-Dieses Repository enthält wiederverwendbare UI-Komponenten und Business-Logik für:
+## Framer Integration (kurz)
 
-- Marketing-Seiten
-- Interaktive Rechner (z. B. bAV vs. Depot)
-- Vergleichstools
-- API-Integrationen
-- Embed-Widgets für Framer
+1. In Framer **Code → New Code File** erstellen.
+2. Inhalt von `components/DynoRechner.tsx` einfügen.
+3. Komponente auf die `/rechner` Seite ziehen.
+4. Props setzen (`defaultNetOutlay`, `defaultYears`, `themePrimary`, `themeBg`, `themeText`, `radius`, `showChart`).
+5. Publish.
 
-Fokus:
+## Testen
 
-- Performance
-- Saubere Architektur
-- Wiederverwendbare Komponenten
-- Framer-kompatible Struktur
-
----
-
-## 🏗 Tech Stack
-
-- Next.js (App Router)
-- TypeScript
-- React
-- TailwindCSS
-- Modular Component Architecture
-
-Optional:
-- API Routes
-- Server Actions
-- Externe APIs
-
----
-
-## 🧩 Framer Integration
-
-Die Struktur ist so aufgebaut, dass einzelne Komponenten isoliert exportiert und in Framer eingebettet werden können.
-
-### Option 1: iFrame Embed
-
-Nach Deployment (z. B. via Vercel):
-
-```html
-<iframe 
-  src="https://your-domain.com/embed/bav-rechner"
-  width="100%" 
-  height="800"
-  style="border:none;"
-></iframe>
+```bash
+npm install
+npm test
+```
