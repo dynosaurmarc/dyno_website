@@ -1,0 +1,38 @@
+:root{
+  /* DYNO / Framer-ish tokens */
+  --text: rgba(255,255,255,0.7);  /* normaler Text (Opacity 0.7) */
+  --heading: #ffffff;            /* Headings voll weiß */
+  --bg: transparent;             /* wichtig fürs iFrame-Embed */
+}
+
+/* Reset */
+html, body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* Normaler Fließtext wie in Framer */
+p, li, input, textarea, button {
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400; /* Regular */
+  color: var(--text);
+}
+
+/* Heading 2 (Framer "Heading2g" Annäherung) */
+h2 {
+  color: var(--heading);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0 0 12px 0;
+}
+
+/* Optional: Links */
+a {
+  color: var(--heading);
+}
