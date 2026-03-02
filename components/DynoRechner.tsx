@@ -640,7 +640,7 @@ function DeltaBadge({
   fmt,
 }: {
   tokens: typeof TOKENS
-  winner: "avDepot" | "bav" | "equal"
+  winner: "depot" | "bav" | "equal"
   delta: number
   fmt: (v: number) => string
 }) {
