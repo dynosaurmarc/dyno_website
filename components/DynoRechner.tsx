@@ -20,13 +20,19 @@ const DesignTokens = {
   spacing: 16,
 } as const
 
-const PROFILES = [
+type Profile = {
+  id: string
+  label: string
+  expectedReturnPa: number
+  totalFeePa: number
+}
+
+const PROFILES: Profile[] = [
   { id: "konservativ", label: "Konservativ", expectedReturnPa: 0.04, totalFeePa: 0.012 },
   { id: "ausgewogen", label: "Ausgewogen", expectedReturnPa: 0.055, totalFeePa: 0.0135 },
   { id: "wachstum", label: "Wachstum", expectedReturnPa: 0.07, totalFeePa: 0.015 },
   { id: "offensiv", label: "Offensiv", expectedReturnPa: 0.082, totalFeePa: 0.0165 },
-] as const
-type ProfileId = (typeof PROFILES)[number]["id"]
+]
 
 const schema = z.object({
   monthlyNetOutlay: z.number().min(1).max(5000),
@@ -41,6 +47,25 @@ const schema = z.object({
 
 type Tab = "depot" | "compare"
 
+type FormState = {
+  monthlyNetOutlay: number
+  years: number
+  expectedReturnPa: number
+  totalFeePa: number
+  marginalTaxRate: number
+  taxRateInRetirement: number
+  fullyDeferredTaxRate: number
+  allowanceTier1Rate: number
+  allowanceTier1Cap: number
+  allowanceTier2Rate: number
+  allowanceTier2Cap: number
+  employerSubsidyRate: number
+  netToGrossFactor: number
+  grossConversion: number
+  incomeTaxRateRetirement: number
+  kvPvRateRetirement: number
+}
+
 type Props = {
   defaultNetOutlay?: number
   defaultYears?: number
@@ -53,12 +78,12 @@ type Props = {
 
 export default function DynoRechner(props: Props) {
   const [tab, setTab] = useState<Tab>("depot")
-const [profileId, setProfileId] = useState<ProfileId>(PROFILES[1].id)
+  const [profileId, setProfileId] = useState<string>(PROFILES[1].id)
   const [expanded, setExpanded] = useState(false)
   const [taxationMode, setTaxationMode] = useState<TaxationMode>("tax_on_gains")
   const [bavMode, setBavMode] = useState<BavInputMode>("simple")
 
-  const [form, setForm] = useState(() => ({
+  const [form, setForm] = useState<FormState>(() => ({
     monthlyNetOutlay: props.defaultNetOutlay ?? 65,
     years: props.defaultYears ?? 30,
     expectedReturnPa: PROFILES[1].expectedReturnPa,
@@ -92,19 +117,17 @@ const [profileId, setProfileId] = useState<ProfileId>(PROFILES[1].id)
     [form],
   )
 
-  // Load saved state
   useEffect(() => {
     const raw = window.localStorage.getItem("dyno-rechner-v1")
     if (!raw) return
     try {
-      const parsed = JSON.parse(raw)
+      const parsed = JSON.parse(raw) as Partial<FormState>
       setForm((prev) => ({ ...prev, ...parsed }))
     } catch {
       // ignore
     }
   }, [])
 
-  // Persist state + URL params
   useEffect(() => {
     window.localStorage.setItem("dyno-rechner-v1", JSON.stringify(form))
     const params = new URLSearchParams(window.location.search)
@@ -114,11 +137,14 @@ const [profileId, setProfileId] = useState<ProfileId>(PROFILES[1].id)
     window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`)
   }, [form, profileId])
 
-  // Profile selection updates expected return + fees
   useEffect(() => {
     const selected = PROFILES.find((p) => p.id === profileId)
     if (!selected) return
-    setForm((prev) => ({ ...prev, expectedReturnPa: selected.expectedReturnPa, totalFeePa: selected.totalFeePa }))
+    setForm((prev) => ({
+      ...prev,
+      expectedReturnPa: selected.expectedReturnPa,
+      totalFeePa: selected.totalFeePa,
+    }))
   }, [profileId])
 
   const comparison = useMemo(
@@ -168,7 +194,7 @@ const [profileId, setProfileId] = useState<ProfileId>(PROFILES[1].id)
 
   const pct = (v: number) => `${(v * 100).toFixed(1)}%`
 
-  const setNum = (k: keyof typeof form, raw: string) => {
+  const setNum = (k: keyof FormState, raw: string) => {
     const n = raw === "" ? 0 : Number(raw)
     setForm((prev) => ({ ...prev, [k]: Number.isFinite(n) ? n : prev[k] }))
   }
@@ -219,22 +245,12 @@ const [profileId, setProfileId] = useState<ProfileId>(PROFILES[1].id)
         </Field>
 
         <Field label="Laufzeit in Jahren">
-          <input
-            type="number"
-            value={form.years}
-            min={1}
-            max={50}
-            onChange={(e) => setNum("years", e.target.value)}
-            style={inputStyle}
-          />
+          <input type="number" value={form.years} min={1} max={50} onChange={(e) => setNum("years", e.target.value)} style={inputStyle} />
         </Field>
 
         <Field label="Investmentoption / Risikoprofil">
-<select
-  value={profileId}
-  onChange={(e) => setProfileId(e.target.value as ProfileId)}
-  style={inputStyle}
->            {PROFILES.map((p) => (
+          <select value={profileId} onChange={(e) => setProfileId(e.target.value)} style={inputStyle}>
+            {PROFILES.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
               </option>
@@ -248,78 +264,32 @@ const [profileId, setProfileId] = useState<ProfileId>(PROFILES[1].id)
 
         <div style={{ marginTop: 12, ...grid2 }}>
           <Field label="Erwartete Rendite p.a.">
-            <input
-              type="number"
-              step="0.001"
-              value={form.expectedReturnPa}
-              onChange={(e) => setNum("expectedReturnPa", e.target.value)}
-              style={inputStyle}
-            />
+            <input type="number" step="0.001" value={form.expectedReturnPa} onChange={(e) => setNum("expectedReturnPa", e.target.value)} style={inputStyle} />
           </Field>
 
           <Field label="Produktkosten p.a. (Effektivkosten)">
-            <input
-              type="number"
-              step="0.001"
-              value={form.totalFeePa}
-              onChange={(e) => setNum("totalFeePa", e.target.value)}
-              style={inputStyle}
-            />
+            <input type="number" step="0.001" value={form.totalFeePa} onChange={(e) => setNum("totalFeePa", e.target.value)} style={inputStyle} />
           </Field>
 
           <Field label="Grenzsteuersatz" help="Einzahlungsphase">
-            <input
-              type="number"
-              step="0.01"
-              value={form.marginalTaxRate}
-              onChange={(e) => setNum("marginalTaxRate", e.target.value)}
-              style={inputStyle}
-            />
+            <input type="number" step="0.01" value={form.marginalTaxRate} onChange={(e) => setNum("marginalTaxRate", e.target.value)} style={inputStyle} />
           </Field>
 
           <Field label="Steuersatz in Rentenphase">
-            <input
-              type="number"
-              step="0.01"
-              value={form.taxRateInRetirement}
-              onChange={(e) => setNum("taxRateInRetirement", e.target.value)}
-              style={inputStyle}
-            />
+            <input type="number" step="0.01" value={form.taxRateInRetirement} onChange={(e) => setNum("taxRateInRetirement", e.target.value)} style={inputStyle} />
           </Field>
 
           <Field label="Zulagen Stufe 1 (Rate / Cap)">
             <div style={{ display: "flex", gap: 8 }}>
-              <input
-                type="number"
-                step="0.01"
-                value={form.allowanceTier1Rate}
-                onChange={(e) => setNum("allowanceTier1Rate", e.target.value)}
-                style={inputStyle}
-              />
-              <input
-                type="number"
-                value={form.allowanceTier1Cap}
-                onChange={(e) => setNum("allowanceTier1Cap", e.target.value)}
-                style={inputStyle}
-              />
+              <input type="number" step="0.01" value={form.allowanceTier1Rate} onChange={(e) => setNum("allowanceTier1Rate", e.target.value)} style={inputStyle} />
+              <input type="number" value={form.allowanceTier1Cap} onChange={(e) => setNum("allowanceTier1Cap", e.target.value)} style={inputStyle} />
             </div>
           </Field>
 
           <Field label="Zulagen Stufe 2 (Rate / Cap)">
             <div style={{ display: "flex", gap: 8 }}>
-              <input
-                type="number"
-                step="0.01"
-                value={form.allowanceTier2Rate}
-                onChange={(e) => setNum("allowanceTier2Rate", e.target.value)}
-                style={inputStyle}
-              />
-              <input
-                type="number"
-                value={form.allowanceTier2Cap}
-                onChange={(e) => setNum("allowanceTier2Cap", e.target.value)}
-                style={inputStyle}
-              />
+              <input type="number" step="0.01" value={form.allowanceTier2Rate} onChange={(e) => setNum("allowanceTier2Rate", e.target.value)} style={inputStyle} />
+              <input type="number" value={form.allowanceTier2Cap} onChange={(e) => setNum("allowanceTier2Cap", e.target.value)} style={inputStyle} />
             </div>
           </Field>
 
@@ -332,13 +302,7 @@ const [profileId, setProfileId] = useState<ProfileId>(PROFILES[1].id)
 
           {taxationMode === "fully_deferred" && (
             <Field label="Persönlicher Steuersatz (voll nachgelagert)">
-              <input
-                type="number"
-                step="0.01"
-                value={form.fullyDeferredTaxRate}
-                onChange={(e) => setNum("fullyDeferredTaxRate", e.target.value)}
-                style={inputStyle}
-              />
+              <input type="number" step="0.01" value={form.fullyDeferredTaxRate} onChange={(e) => setNum("fullyDeferredTaxRate", e.target.value)} style={inputStyle} />
             </Field>
           )}
 
@@ -350,64 +314,30 @@ const [profileId, setProfileId] = useState<ProfileId>(PROFILES[1].id)
           </Field>
 
           <Field label="Arbeitgeberzuschuss">
-            <input
-              type="number"
-              step="0.01"
-              value={form.employerSubsidyRate}
-              onChange={(e) => setNum("employerSubsidyRate", e.target.value)}
-              style={inputStyle}
-            />
+            <input type="number" step="0.01" value={form.employerSubsidyRate} onChange={(e) => setNum("employerSubsidyRate", e.target.value)} style={inputStyle} />
           </Field>
 
           {bavMode === "simple" ? (
             <Field label="Netto → Brutto Faktor">
-              <input
-                type="number"
-                step="0.0001"
-                value={form.netToGrossFactor}
-                onChange={(e) => setNum("netToGrossFactor", e.target.value)}
-                style={inputStyle}
-              />
+              <input type="number" step="0.0001" value={form.netToGrossFactor} onChange={(e) => setNum("netToGrossFactor", e.target.value)} style={inputStyle} />
             </Field>
           ) : (
             <Field label="Bruttoumwandlung €/Monat">
-              <input
-                type="number"
-                value={form.grossConversion}
-                onChange={(e) => setNum("grossConversion", e.target.value)}
-                style={inputStyle}
-              />
+              <input type="number" value={form.grossConversion} onChange={(e) => setNum("grossConversion", e.target.value)} style={inputStyle} />
             </Field>
           )}
 
           <Field label="Einkommensteuer in Rente (bAV)">
-            <input
-              type="number"
-              step="0.01"
-              value={form.incomeTaxRateRetirement}
-              onChange={(e) => setNum("incomeTaxRateRetirement", e.target.value)}
-              style={inputStyle}
-            />
+            <input type="number" step="0.01" value={form.incomeTaxRateRetirement} onChange={(e) => setNum("incomeTaxRateRetirement", e.target.value)} style={inputStyle} />
           </Field>
 
           <Field label="KV/PV in Rente (bAV)">
-            <input
-              type="number"
-              step="0.01"
-              value={form.kvPvRateRetirement}
-              onChange={(e) => setNum("kvPvRateRetirement", e.target.value)}
-              style={inputStyle}
-            />
+            <input type="number" step="0.01" value={form.kvPvRateRetirement} onChange={(e) => setNum("kvPvRateRetirement", e.target.value)} style={inputStyle} />
           </Field>
         </div>
       </details>
 
-      {!validation.success && (
-        <div style={alertStyle(DesignTokens.danger)}>
-          Eingaben ungültig: {validation.error.issues[0]?.message}
-        </div>
-      )}
-
+      {!validation.success && <div style={alertStyle(DesignTokens.danger)}>Eingaben ungültig: {validation.error.issues[0]?.message}</div>}
       {warning && <div style={alertStyle("#B54708")}>{warning}</div>}
 
       <div style={cards}>
@@ -444,13 +374,7 @@ const [profileId, setProfileId] = useState<ProfileId>(PROFILES[1].id)
       </div>
 
       {tab === "compare" && (
-        <div
-          style={{
-            marginTop: 14,
-            fontWeight: 700,
-            color: comparison.winner === "bav" ? DesignTokens.success : DesignTokens.danger,
-          }}
-        >
+        <div style={{ marginTop: 14, fontWeight: 700, color: comparison.winner === "bav" ? DesignTokens.success : DesignTokens.danger }}>
           Delta:{" "}
           {comparison.winner === "equal"
             ? "Gleichstand"
