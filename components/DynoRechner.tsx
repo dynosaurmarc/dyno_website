@@ -26,6 +26,7 @@ const PROFILES = [
   { id: "wachstum", label: "Wachstum", expectedReturnPa: 0.07, totalFeePa: 0.015 },
   { id: "offensiv", label: "Offensiv", expectedReturnPa: 0.082, totalFeePa: 0.0165 },
 ] as const
+type ProfileId = (typeof PROFILES)[number]["id"]
 
 const schema = z.object({
   monthlyNetOutlay: z.number().min(1).max(5000),
@@ -52,7 +53,7 @@ type Props = {
 
 export default function DynoRechner(props: Props) {
   const [tab, setTab] = useState<Tab>("depot")
-  const [profileId, setProfileId] = useState(PROFILES[1].id)
+const [profileId, setProfileId] = useState<ProfileId>(PROFILES[1].id)
   const [expanded, setExpanded] = useState(false)
   const [taxationMode, setTaxationMode] = useState<TaxationMode>("tax_on_gains")
   const [bavMode, setBavMode] = useState<BavInputMode>("simple")
@@ -229,8 +230,11 @@ export default function DynoRechner(props: Props) {
         </Field>
 
         <Field label="Investmentoption / Risikoprofil">
-          <select value={profileId} onChange={(e) => setProfileId(e.target.value)} style={inputStyle}>
-            {PROFILES.map((p) => (
+<select
+  value={profileId}
+  onChange={(e) => setProfileId(e.target.value as ProfileId)}
+  style={inputStyle}
+>            {PROFILES.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
               </option>
